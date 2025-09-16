@@ -1,0 +1,1161 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TuleyaPapayaPremium</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: #000;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+        
+        #gameContainer {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            background: #222;
+        }
+        
+        #canvas {
+            display: block;
+            background: #001133;
+        }
+        
+        #backgroundVideo {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            z-index: -1;
+        }
+        
+        #ui {
+            position: absolute;
+            top: 80px;
+            left: 10px;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            display: none;
+        }
+        
+        #instructions {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            color: white;
+            font-size: 12px;
+        }
+        
+        #menu {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            color: white;
+            z-index: 100;
+        }
+        
+        #leaderboard {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 20px;
+            border-radius: 10px;
+            color: white;
+            font-size: 14px;
+            max-width: 300px;
+        }
+        
+        #loginForm {
+            margin: 20px 0;
+        }
+        
+        #playerNameInput {
+            padding: 10px;
+            font-size: 16px;
+            border: none;
+            border-radius: 5px;
+            margin: 10px;
+        }
+        
+        .menuButton {
+            background: #4CAF50;
+            color: white;
+            padding: 15px 30px;
+            margin: 10px;
+            border: none;
+            border-radius: 5px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+        
+        .menuButton:hover {
+            background: #45a049;
+        }
+        
+        #joystick {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            width: 150px;
+            height: 150px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            display: none;
+        }
+        
+        #joystickKnob {
+            position: absolute;
+            width: 60px;
+            height: 60px;
+            background: black;
+            border-radius: 50%;
+            top: 45px;
+            left: 45px;
+        }
+        
+        #shootButton {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            width: 120px;
+            height: 120px;
+            background: rgba(255, 0, 0, 0.7);
+            border-radius: 50%;
+            border: none;
+            color: white;
+            font-size: 24px;
+            display: none;
+        }
+        
+        #dashButton {
+            position: absolute;
+            bottom: 160px;
+            left: 20px;
+            width: 80px;
+            height: 80px;
+            background: rgba(0, 0, 255, 0.7);
+            border-radius: 50%;
+            border: none;
+            color: white;
+            font-size: 16px;
+            display: none;
+        }
+        
+        #menuBtn {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            display: none;
+        }
+        
+        #settings {
+            margin: 20px 0;
+        }
+        
+        #volumeSlider {
+            width: 200px;
+            margin: 0 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameContainer">
+
+        <canvas id="canvas"></canvas>
+        <div id="ui">
+            <div>Pontos: <span id="score">0</span></div>
+            <div>Round: <span id="wave">1</span></div>
+            <div>Munição: <span id="ammo">30</span>/∞</div>
+        </div>
+        <div id="instructions">
+            WASD: Move | Mouse: Aim | Click: Shoot
+        </div>
+        <div id="leaderboard">
+            <h3>🏆 RECORDS</h3>
+            <div id="recordsList"></div>
+        </div>
+        
+        <div id="menu">
+            <h1>TuleyaPapayaPremium</h1>
+            <div id="loginForm">
+                <input type="text" id="playerNameInput" placeholder="Digite seu nome" maxlength="15">
+                <button class="menuButton" onclick="loginPlayer()">Entrar</button>
+            </div>
+            <div id="gameMenu" style="display: none;">
+                <p>Bem-vindo, <span id="currentPlayerName"></span>!</p>
+                <button id="initialBtn" class="menuButton" onclick="showPlatformChoice()">Iniciar Jogo</button>
+                <button id="configBtn" class="menuButton" onclick="showSettings()">Configurações</button>
+            </div>
+            <div id="platformChoice" style="display: none;">
+                <button class="menuButton" onclick="choosePlatform('pc')">PC</button>
+                <button class="menuButton" onclick="choosePlatform('mobile')">Celular</button>
+            </div>
+            <div id="settings" style="display: none;">
+                <p>Volume da Música:</p>
+                <input type="range" id="volumeSlider" min="0" max="10" value="5" onchange="changeVolume(this.value)">
+                <span id="volumeValue">5</span>
+                <br><br>
+                <button class="menuButton" onclick="backToMenu()">Voltar</button>
+            </div>
+            <button id="restartBtn" class="menuButton" onclick="restartGame()" style="display: none;">Reiniciar</button>
+        </div>
+        <button id="menuBtn" onclick="pauseGame()">MENU</button>
+        <div id="joystick">
+            <div id="joystickKnob"></div>
+        </div>
+        <button id="shootButton">ATIRAR</button>
+        <button id="dashButton">DASH</button>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Configurar canvas para tela inteira
+        function resizeCanvas() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        
+        resizeCanvas();
+        window.addEventListener('resize', resizeCanvas);
+        
+        let player = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            size: 45, // Aumentado em 50% novamente (30 * 1.5 = 45)
+            speed: 4,
+            health: 100,
+            maxHealth: 100,
+            image: new Image(),
+            imageLoaded: false
+        };
+        
+        player.image.src = 'asd2.png';
+        player.image.onload = () => { player.imageLoaded = true; };
+        
+        // Sistema de música variada
+        let currentMusicIndex = Math.floor(Math.random() * 2); // Inicia aleatoriamente
+        const musicTracks = ['musica1.mp3', 'musica2.mp3'];
+        let backgroundMusic = new Audio(musicTracks[currentMusicIndex]);
+        backgroundMusic.volume = 0.15; // Aumentado em 50% (0.1 * 1.5 = 0.15)
+        backgroundMusic.loop = false;
+        
+        function playNextMusic() {
+            // 50% chance para cada música
+            currentMusicIndex = Math.random() < 0.5 ? 0 : 1;
+            
+            backgroundMusic = new Audio(musicTracks[currentMusicIndex]);
+            backgroundMusic.volume = musicVolume / 10 * 0.3;
+            backgroundMusic.play().catch(e => console.log('Erro na música:', e));
+            
+            backgroundMusic.onended = () => {
+                setTimeout(playNextMusic, 500);
+            };
+        }
+        
+        // Iniciar música
+        setTimeout(() => {
+            playNextMusic();
+        }, 1000);
+        
+
+        
+        let mouse = { x: 0, y: 0 };
+        let keys = {};
+        let bullets = [];
+        let enemies = [];
+        let particles = [];
+        let score = 0;
+        let wave = 1;
+        let enemiesKilled = 0;
+        let gameRunning = false;
+        let isMobile = false;
+        let joystickActive = false;
+        let joystickCenter = { x: 0, y: 0 };
+        let musicVolume = 5;
+        let ammo = 30;
+        let maxAmmo = 30;
+        let isReloading = false;
+        let reloadTime = 2000; // 2 segundos
+        let isDashing = false;
+        let dashCooldown = false;
+        let dashDirection = { x: 0, y: 0 };
+        let lastMovement = { x: 0, y: 0 };
+        let dashCooldownTime = 10000; // 10 segundos
+        let dashCooldownStart = 0;
+        let dashCooldownProgress = 1;
+        let currentPlayer = '';
+        let playerRecords = JSON.parse(localStorage.getItem('tuleyaRecords')) || {};
+        let lastHealthRegen = Date.now();
+        
+        function loginPlayer() {
+            const nameInput = document.getElementById('playerNameInput');
+            const playerName = nameInput.value.trim();
+            
+            if (playerName === '') {
+                alert('Por favor, digite um nome!');
+                return;
+            }
+            
+            if (playerName.length < 2) {
+                alert('Nome deve ter pelo menos 2 caracteres!');
+                return;
+            }
+            
+            // Registrar jogador se não existir
+            if (!playerRecords[playerName]) {
+                playerRecords[playerName] = { bestScore: 0, gamesPlayed: 0 };
+                localStorage.setItem('tuleyaRecords', JSON.stringify(playerRecords));
+            }
+            
+            currentPlayer = playerName;
+            document.getElementById('currentPlayerName').textContent = playerName;
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('gameMenu').style.display = 'block';
+            updateLeaderboard();
+        }
+        
+        function updateLeaderboard() {
+            const recordsList = document.getElementById('recordsList');
+            const sortedPlayers = Object.entries(playerRecords)
+                .sort((a, b) => b[1].bestScore - a[1].bestScore)
+                .slice(0, 10);
+            
+            recordsList.innerHTML = sortedPlayers.map((player, index) => 
+                `<div>${index + 1}. ${player[0]}: ${player[1].bestScore} pts</div>`
+            ).join('');
+        }
+        
+        function showSettings() {
+            document.getElementById('initialBtn').style.display = 'none';
+            document.getElementById('configBtn').style.display = 'none';
+            document.getElementById('settings').style.display = 'block';
+        }
+        
+        function backToMenu() {
+            document.getElementById('settings').style.display = 'none';
+            document.getElementById('gameMenu').style.display = 'block';
+            document.getElementById('initialBtn').style.display = 'inline-block';
+            document.getElementById('configBtn').style.display = 'inline-block';
+        }
+        
+        function changeVolume(value) {
+            musicVolume = value;
+            backgroundMusic.volume = value / 10 * 0.3;
+            document.getElementById('volumeValue').textContent = value;
+        }
+        
+        function pauseGame() {
+            // Resetar jogo completamente
+            player.health = 100;
+            player.x = canvas.width / 2;
+            player.y = canvas.height / 2;
+            score = 0;
+            wave = 1;
+            enemiesKilled = 0;
+            bullets = [];
+            enemies = [];
+            particles = [];
+            ammo = maxAmmo;
+            isReloading = false;
+            gameRunning = false;
+            
+            // Voltar ao menu principal
+            document.getElementById('menu').style.display = 'block';
+            document.getElementById('leaderboard').style.display = 'block';
+            document.getElementById('menuBtn').style.display = 'none';
+            document.getElementById('joystick').style.display = 'none';
+            document.getElementById('shootButton').style.display = 'none';
+            document.getElementById('dashButton').style.display = 'none';
+            document.getElementById('ui').style.display = 'none';
+            document.getElementById('loginForm').style.display = 'none';
+            document.getElementById('gameMenu').style.display = 'block';
+            document.getElementById('initialBtn').style.display = 'inline-block';
+            document.getElementById('configBtn').style.display = 'inline-block';
+            document.getElementById('platformChoice').style.display = 'none';
+            document.getElementById('settings').style.display = 'none';
+            document.getElementById('restartBtn').style.display = 'none';
+            updateLeaderboard();
+        }
+        
+        function showPlatformChoice() {
+            document.getElementById('initialBtn').style.display = 'none';
+            document.getElementById('configBtn').style.display = 'none';
+            document.getElementById('platformChoice').style.display = 'block';
+        }
+        
+        function choosePlatform(platform) {
+            isMobile = platform === 'mobile';
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('leaderboard').style.display = 'none';
+            document.getElementById('menuBtn').style.display = 'block';
+            
+            if (isMobile) {
+                document.getElementById('joystick').style.display = 'block';
+                document.getElementById('shootButton').style.display = 'block';
+                document.getElementById('dashButton').style.display = 'block';
+                setupMobileControls();
+            } else {
+                document.getElementById('joystick').style.display = 'none';
+                document.getElementById('shootButton').style.display = 'none';
+                document.getElementById('dashButton').style.display = 'none';
+            }
+            
+            document.getElementById('ui').style.display = 'block';
+            gameRunning = true;
+            spawnEnemies();
+            gameLoop();
+        }
+        
+        function setupMobileControls() {
+            const joystick = document.getElementById('joystick');
+            const knob = document.getElementById('joystickKnob');
+            const shootBtn = document.getElementById('shootButton');
+            
+            joystick.addEventListener('touchstart', (e) => {
+                joystickActive = true;
+                const rect = joystick.getBoundingClientRect();
+                joystickCenter = { x: rect.left + 75, y: rect.top + 75 };
+            });
+            
+            joystick.addEventListener('touchmove', (e) => {
+                if (joystickActive) {
+                    const touch = e.touches[0];
+                    const dx = touch.clientX - joystickCenter.x;
+                    const dy = touch.clientY - joystickCenter.y;
+                    const distance = Math.min(45, Math.sqrt(dx * dx + dy * dy));
+                    const angle = Math.atan2(dy, dx);
+                    
+                    knob.style.left = (45 + Math.cos(angle) * distance) + 'px';
+                    knob.style.top = (45 + Math.sin(angle) * distance) + 'px';
+                    
+                    // Mover jogador apenas no modo celular
+                    if (distance > 5 && !isDashing) {
+                        const moveX = Math.cos(angle) * player.speed;
+                        const moveY = Math.sin(angle) * player.speed;
+                        const newX = player.x + moveX;
+                        const newY = player.y + moveY;
+                        
+                        if (newX >= player.size && newX <= canvas.width - player.size) {
+                            player.x = newX;
+                        }
+                        if (newY >= player.size && newY <= canvas.height - player.size) {
+                            player.y = newY;
+                        }
+                        
+                        // Salvar direção para dash
+                        lastMovement.x = Math.cos(angle);
+                        lastMovement.y = Math.sin(angle);
+                    }
+                }
+                e.preventDefault();
+            });
+            
+            joystick.addEventListener('touchend', () => {
+                joystickActive = false;
+                knob.style.left = '45px';
+                knob.style.top = '45px';
+            });
+            
+            shootBtn.addEventListener('touchstart', () => {
+                if (gameRunning) mobileShoot();
+            });
+            
+            const dashBtn = document.getElementById('dashButton');
+            dashBtn.addEventListener('touchstart', () => {
+                if (gameRunning) activateDash();
+            });
+        }
+        
+        function mobileShoot() {
+            if (ammo > 0 && !isReloading) {
+                // Encontrar inimigo mais próximo
+                let closestEnemy = null;
+                let closestDistance = Infinity;
+                
+                enemies.forEach(enemy => {
+                    const dx = enemy.x - player.x;
+                    const dy = enemy.y - player.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    if (distance < closestDistance) {
+                        closestDistance = distance;
+                        closestEnemy = enemy;
+                    }
+                });
+                
+                if (closestEnemy) {
+                    const angle = Math.atan2(closestEnemy.y - player.y, closestEnemy.x - player.x);
+                    bullets.push(new Bullet(player.x, player.y, angle));
+                    ammo--;
+                    
+                    if (ammo === 0) {
+                        reload();
+                    }
+                }
+            }
+        }
+        
+
+        
+        function restartGame() {
+            // Salvar record antes de resetar
+            if (currentPlayer && score > 0) {
+                playerRecords[currentPlayer].bestScore = score;
+                playerRecords[currentPlayer].gamesPlayed++;
+                localStorage.setItem('tuleyaRecords', JSON.stringify(playerRecords));
+            }
+            
+            // Resetar variáveis do jogo
+            player.health = 100;
+            player.x = canvas.width / 2;
+            player.y = canvas.height / 2;
+            score = 0;
+            wave = 1;
+            enemiesKilled = 0;
+            bullets = [];
+            enemies = [];
+            particles = [];
+            
+            // Iniciar jogo novamente
+            document.getElementById('menu').style.display = 'none';
+            document.getElementById('leaderboard').style.display = 'none';
+            gameRunning = true;
+            spawnEnemies();
+            gameLoop();
+        }
+        
+        function showMenu() {
+            document.getElementById('menu').style.display = 'block';
+            document.getElementById('initialBtn').style.display = 'none';
+            document.getElementById('platformChoice').style.display = 'none';
+            document.getElementById('restartBtn').style.display = 'inline-block';
+            gameRunning = false;
+        }
+        
+        class Bullet {
+            constructor(x, y, angle) {
+                this.x = x;
+                this.y = y;
+                this.speed = 8;
+                this.size = 22; // Aumentado em 50% novamente (15 * 1.5 = 22.5 ≈ 22)
+                this.dx = Math.cos(angle) * this.speed;
+                this.dy = Math.sin(angle) * this.speed;
+                
+                // Escolher imagem aleatória
+                const images = ['peso.png', 'alface.png'];
+                this.imageSrc = images[Math.floor(Math.random() * images.length)];
+                this.image = new Image();
+                this.image.src = this.imageSrc;
+                this.imageLoaded = false;
+                this.image.onload = () => { this.imageLoaded = true; };
+            }
+            
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+                return this.x > 0 && this.x < canvas.width && this.y > 0 && this.y < canvas.height;
+            }
+            
+            draw() {
+                if (this.imageLoaded) {
+                    // Desenhar imagem do tiro
+                    ctx.drawImage(this.image, this.x - this.size, this.y - this.size, this.size * 2, this.size * 2);
+                } else {
+                    // Fallback: círculo amarelo
+                    ctx.fillStyle = '#ffff00';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+            }
+        }
+        
+        class Enemy {
+            constructor(x, y) {
+                this.x = x;
+                this.y = y;
+                this.size = 35; // Aumentado ainda mais
+                this.speed = 1 + wave * 0.2;
+                this.health = 100;
+                this.maxHealth = this.health;
+                this.stunned = false;
+                this.stunnedTime = 0;
+                
+                // Escolher imagem aleatória
+                const images = ['a1.png', 'a2.png', 'a3.png'];
+                this.imageSrc = images[Math.floor(Math.random() * images.length)];
+                this.image = new Image();
+                this.image.src = this.imageSrc;
+                this.imageLoaded = false;
+                this.image.onload = () => { this.imageLoaded = true; };
+                
+                // Escolher nome aleatório
+                const names = ['Luan', 'Yago', 'Ferreira', 'Edu', 'Landim'];
+                this.name = names[Math.floor(Math.random() * names.length)];
+                
+                // Escolher frase aleatória
+                if (this.name === 'Landim' && Math.random() < 0.5) {
+                    this.phrase = 'Eu tenho sindrome de down!';
+                    this.showPhrase = true;
+                } else {
+                    const phrases = ['Ele está com um hamburguer pessoal!', 'To com fome!', 'Eu quero hamburguer!'];
+                    this.phrase = phrases[Math.floor(Math.random() * phrases.length)];
+                    this.showPhrase = Math.random() < 0.1; // 10% chance de mostrar frase
+                }
+            }
+            
+            update() {
+                // Atualizar stun
+                if (this.stunned) {
+                    this.stunnedTime -= 16; // Aproximadamente 60fps
+                    if (this.stunnedTime <= 0) {
+                        this.stunned = false;
+                    }
+                    return this.health > 0; // Não se move se stunned
+                }
+                
+                const dx = player.x - this.x;
+                const dy = player.y - this.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                let newX = this.x + (dx / distance) * this.speed;
+                let newY = this.y + (dy / distance) * this.speed;
+                
+                // Verificar colisão com outros inimigos
+                let collision = false;
+                enemies.forEach(other => {
+                    if (other !== this && other.health > 0) {
+                        const otherDx = newX - other.x;
+                        const otherDy = newY - other.y;
+                        const otherDistance = Math.sqrt(otherDx * otherDx + otherDy * otherDy);
+                        if (otherDistance < this.size + other.size) {
+                            collision = true;
+                        }
+                    }
+                });
+                
+                // Só move se não houver colisão
+                if (!collision) {
+                    this.x = newX;
+                    this.y = newY;
+                }
+                
+                // Colisão com jogador (apenas se não estiver em dash)
+                if (!isDashing && distance < this.size + player.size) {
+                    this.health -= 50;
+                    this.stunned = true;
+                    this.stunnedTime = 2000; // 2 segundos
+                    player.health -= 15; // Dano ao jogador
+                    createParticles(this.x, this.y, '#ff6600', 5);
+                    
+                    // Tocar som de stun
+                    const stunAudio = new Audio('stun.mp4');
+                    stunAudio.volume = 0.3;
+                    stunAudio.play().catch(e => console.log('Erro ao tocar áudio de stun:', e));
+                }
+                
+                return this.health > 0;
+            }
+            
+            draw() {
+                if (this.imageLoaded) {
+                    // Desenhar imagem do inimigo
+                    ctx.drawImage(this.image, this.x - this.size, this.y - this.size, this.size * 2, this.size * 2);
+                } else {
+                    // Fallback: círculo colorido
+                    ctx.fillStyle = 'red';
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                    ctx.fill();
+                }
+                
+                // Nome do inimigo
+                ctx.fillStyle = 'white';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(this.name, this.x, this.y - this.size - 15);
+                
+                // Caixa de texto com frase (não mostra se stunned)
+                if (this.showPhrase && !this.stunned) {
+                    const textWidth = ctx.measureText(this.phrase).width + 10;
+                    const textHeight = 20;
+                    
+                    // Caixa de fundo
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+                    ctx.fillRect(this.x - textWidth/2, this.y + this.size + 5, textWidth, textHeight);
+                    
+                    // Borda da caixa
+                    ctx.strokeStyle = 'black';
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(this.x - textWidth/2, this.y + this.size + 5, textWidth, textHeight);
+                    
+                    // Texto da frase
+                    ctx.fillStyle = 'black';
+                    ctx.font = '12px Arial';
+                    ctx.fillText(this.phrase, this.x, this.y + this.size + 18);
+                }
+                
+                // Barra de vida
+                if (this.health < this.maxHealth) {
+                    const barWidth = this.size * 2;
+                    const barHeight = 3;
+                    const healthPercent = this.health / this.maxHealth;
+                    
+                    ctx.fillStyle = 'red';
+                    ctx.fillRect(this.x - barWidth/2, this.y - this.size - 8, barWidth, barHeight);
+                    ctx.fillStyle = 'green';
+                    ctx.fillRect(this.x - barWidth/2, this.y - this.size - 8, barWidth * healthPercent, barHeight);
+                }
+            }
+        }
+        
+        class Particle {
+            constructor(x, y, color) {
+                this.x = x;
+                this.y = y;
+                this.dx = (Math.random() - 0.5) * 6;
+                this.dy = (Math.random() - 0.5) * 6;
+                this.size = Math.random() * 3 + 1;
+                this.life = 30;
+                this.maxLife = 30;
+                this.color = color;
+            }
+            
+            update() {
+                this.x += this.dx;
+                this.y += this.dy;
+                this.dx *= 0.98;
+                this.dy *= 0.98;
+                this.life--;
+                return this.life > 0;
+            }
+            
+            draw() {
+                const alpha = this.life / this.maxLife;
+                ctx.globalAlpha = alpha;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.globalAlpha = 1;
+            }
+        }
+        
+        function spawnEnemies() {
+            const enemyCount = 9 + wave; // Round 1 = 10, Round 2 = 11, etc
+            const margin = 100; // Margem das bordas
+            const minDistanceBetweenEnemies = 80; // Distância mínima entre inimigos
+            
+            for (let i = 0; i < enemyCount; i++) {
+                let x, y;
+                let attempts = 0;
+                let validPosition = false;
+                
+                while (!validPosition && attempts < 50) {
+                    // Spawn dentro da arena com margem das bordas
+                    x = Math.random() * (canvas.width - margin * 2) + margin;
+                    y = Math.random() * (canvas.height - margin * 2) + margin;
+                    
+                    // Verificar distância do jogador
+                    const minDistanceFromPlayer = 150;
+                    const dxPlayer = x - player.x;
+                    const dyPlayer = y - player.y;
+                    const distanceFromPlayer = Math.sqrt(dxPlayer * dxPlayer + dyPlayer * dyPlayer);
+                    
+                    // Verificar distância de outros inimigos
+                    let tooClose = false;
+                    for (let enemy of enemies) {
+                        const dxEnemy = x - enemy.x;
+                        const dyEnemy = y - enemy.y;
+                        const distanceFromEnemy = Math.sqrt(dxEnemy * dxEnemy + dyEnemy * dyEnemy);
+                        if (distanceFromEnemy < minDistanceBetweenEnemies) {
+                            tooClose = true;
+                            break;
+                        }
+                    }
+                    
+                    if (distanceFromPlayer >= minDistanceFromPlayer && !tooClose) {
+                        validPosition = true;
+                    }
+                    
+                    attempts++;
+                }
+                
+                // Se não encontrou posição válida, usar posição aleatória
+                if (!validPosition) {
+                    x = Math.random() * (canvas.width - margin * 2) + margin;
+                    y = Math.random() * (canvas.height - margin * 2) + margin;
+                }
+                
+                enemies.push(new Enemy(x, y));
+            }
+        }
+        
+        function shoot() {
+            if (ammo > 0 && !isReloading) {
+                const angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+                bullets.push(new Bullet(player.x, player.y, angle));
+                ammo--;
+                
+                if (ammo === 0) {
+                    reload();
+                }
+            }
+        }
+        
+        function reload() {
+            if (!isReloading && ammo < maxAmmo) {
+                isReloading = true;
+                setTimeout(() => {
+                    ammo = maxAmmo;
+                    isReloading = false;
+                }, reloadTime);
+            }
+        }
+        
+        function createParticles(x, y, color, count = 8) {
+            for (let i = 0; i < count; i++) {
+                particles.push(new Particle(x, y, color));
+            }
+        }
+        
+        function update() {
+            // Movimento do jogador
+            let moveX = 0, moveY = 0;
+            
+            if (isDashing) {
+                // Movimento durante dash
+                moveX = dashDirection.x * player.speed * 3;
+                moveY = dashDirection.y * player.speed * 3;
+            } else if (!isMobile) {
+                // Movimento normal PC - resetar direção quando não há tecla pressionada
+                let hasMovement = false;
+                if (keys['w'] || keys['W']) { moveY = -player.speed; lastMovement.x = 0; lastMovement.y = -1; hasMovement = true; }
+                if (keys['s'] || keys['S']) { moveY = player.speed; lastMovement.x = 0; lastMovement.y = 1; hasMovement = true; }
+                if (keys['a'] || keys['A']) { moveX = -player.speed; lastMovement.x = -1; lastMovement.y = 0; hasMovement = true; }
+                if (keys['d'] || keys['D']) { moveX = player.speed; lastMovement.x = 1; lastMovement.y = 0; hasMovement = true; }
+                
+                // Se não há movimento, não alterar lastMovement
+            }
+            
+            // Aplicar movimento apenas se houver movimento ou dash
+            if ((moveX !== 0 || moveY !== 0) && (isDashing || !isMobile)) {
+                const newX = player.x + moveX;
+                const newY = player.y + moveY;
+                
+                // Verificar limites antes de mover - parar movimento se bater na borda
+                if (newX >= player.size && newX <= canvas.width - player.size) {
+                    player.x = newX;
+                } else if (isDashing) {
+                    // Parar dash se bater na borda horizontal
+                    isDashing = false;
+                    dashDirection.x = 0;
+                    dashDirection.y = 0;
+                }
+                
+                if (newY >= player.size && newY <= canvas.height - player.size) {
+                    player.y = newY;
+                } else if (isDashing) {
+                    // Parar dash se bater na borda vertical
+                    isDashing = false;
+                    dashDirection.x = 0;
+                    dashDirection.y = 0;
+                }
+            }
+            
+            // Atualizar balas
+            bullets = bullets.filter(bullet => {
+                const alive = bullet.update();
+                let bulletHit = false;
+                
+                // Colisão bala-inimigo (apenas 1 hit por bala)
+                for (let i = 0; i < enemies.length && !bulletHit; i++) {
+                    const enemy = enemies[i];
+                    const dx = bullet.x - enemy.x;
+                    const dy = bullet.y - enemy.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+                    
+                    if (distance < bullet.size + enemy.size) {
+                        enemy.health -= 25;
+                        bulletHit = true;
+                        createParticles(enemy.x, enemy.y, '#ff6600', 5);
+                        
+                        // Tocar som de hit
+                        const hitAudio = new Audio('asd.mp3');
+                        hitAudio.volume = 0.16; // Aumentado em 60% (0.1 * 1.6 = 0.16)
+                        hitAudio.play().catch(e => console.log('Erro ao tocar áudio de hit:', e));
+                        
+                        if (enemy.health <= 0) {
+                            createParticles(enemy.x, enemy.y, '#ff0000', 12);
+                            enemies.splice(i, 1);
+                            score += 2; // 2 pontos por eliminação
+                            enemiesKilled++;
+                            
+                            // Tocar som de eliminação com probabilidade
+                            const chance = Math.random();
+                            if (chance < 0.1) {
+                                // 10% chance de tocar asd1.mp3
+                                const audio = new Audio('asd1.mp3');
+                                audio.volume = 0.32; // Diminuído em 20% (0.4 * 0.8 = 0.32)
+                                audio.play().catch(e => console.log('Erro ao tocar áudio:', e));
+                            } else if (chance < 0.2) {
+                                // 10% chance de tocar asd3.mp3
+                                const audio = new Audio('asd3.mp3');
+                                audio.volume = 0.32; // Diminuído em 20% (0.4 * 0.8 = 0.32)
+                                audio.play().catch(e => console.log('Erro ao tocar áudio:', e));
+                            }
+                            // 80% chance de não tocar nada
+                        }
+                        break;
+                    }
+                }
+                
+                return alive && !bulletHit;
+            });
+            
+            // Atualizar inimigos
+            enemies = enemies.filter(enemy => enemy.update());
+            
+            // Atualizar partículas
+            particles = particles.filter(particle => particle.update());
+            
+            // Regeneração de vida (2 por segundo)
+            const now = Date.now();
+            if (now - lastHealthRegen >= 1000 && player.health < player.maxHealth) {
+                player.health = Math.min(player.health + 2, player.maxHealth);
+                lastHealthRegen = now;
+            }
+            
+            // Próxima wave
+            if (enemies.length === 0) {
+                score += 10; // 10 pontos por round sobrevivido
+                wave++;
+                spawnEnemies();
+            }
+            
+            // Game Over
+            if (player.health <= 0) {
+                // Sempre substituir pela pontuação atual (menor ou maior)
+                if (currentPlayer) {
+                    playerRecords[currentPlayer].bestScore = score;
+                    playerRecords[currentPlayer].gamesPlayed++;
+                    localStorage.setItem('tuleyaRecords', JSON.stringify(playerRecords));
+                }
+                showMenu();
+            }
+            
+            // Atualizar UI
+            document.getElementById('score').textContent = score;
+            document.getElementById('wave').textContent = wave;
+            if (document.getElementById('ammo')) {
+                document.getElementById('ammo').textContent = ammo;
+            }
+        }
+        
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Desenhar efeito de dash no lado oposto da direção
+            if (isDashing) {
+                const dashImage = new Image();
+                dashImage.src = 'raio.png';
+                if (dashImage.complete) {
+                    ctx.save();
+                    // Posicionar no lado oposto da direção do dash
+                    const raioX = player.x - dashDirection.x * player.size * 1.5;
+                    const raioY = player.y - dashDirection.y * player.size * 1.5;
+                    ctx.translate(raioX, raioY);
+                    
+                    // Calcular ângulo oposto ao dash
+                    const dashAngle = Math.atan2(dashDirection.y, dashDirection.x);
+                    const oppositeAngle = dashAngle + Math.PI; // Ângulo oposto
+                    ctx.rotate(oppositeAngle);
+                    
+                    const raioSize = player.size * 2;
+                    ctx.drawImage(dashImage, 15, -14, 56, 28);
+                    ctx.restore();
+                }
+            }
+            
+            // Desenhar jogador
+            if (player.imageLoaded) {
+                ctx.drawImage(player.image, player.x - player.size, player.y - player.size, player.size * 2, player.size * 2);
+            } else {
+                ctx.fillStyle = '#00ff00';
+                ctx.beginPath();
+                ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+                ctx.fill();
+            }
+            
+            // Nome do jogador
+            if (currentPlayer) {
+                ctx.fillStyle = 'white';
+                ctx.font = '14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(currentPlayer, player.x, player.y - player.size - 15);
+            }
+            
+            // Desenhar arma
+            const weaponImage = new Image();
+            weaponImage.src = 'arma.png';
+            if (weaponImage.complete) {
+                const angle = Math.atan2(mouse.y - player.y, mouse.x - player.x);
+                ctx.save();
+                ctx.translate(player.x, player.y);
+                ctx.rotate(angle);
+                ctx.scale(1, 1); // Sem inversão
+                ctx.drawImage(weaponImage, 15, -14, 56, 28);
+                ctx.restore();
+            } else {
+                // Fallback: linha de mira
+                ctx.strokeStyle = '#ffffff';
+                ctx.lineWidth = 1;
+                ctx.beginPath();
+                ctx.moveTo(player.x, player.y);
+                ctx.lineTo(mouse.x, mouse.y);
+                ctx.stroke();
+            }
+            
+            // Desenhar balas
+            bullets.forEach(bullet => bullet.draw());
+            
+            // Desenhar inimigos
+            enemies.forEach(enemy => enemy.draw());
+            
+            // Desenhar partículas
+            particles.forEach(particle => particle.draw());
+            
+            // Barra de vida do jogador
+            const barWidth = 200;
+            const barHeight = 20;
+            const healthPercent = player.health / player.maxHealth;
+            
+            ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+            ctx.fillRect(canvas.width - barWidth - 20, 20, barWidth, barHeight);
+            ctx.fillStyle = 'rgba(0, 255, 0, 0.7)';
+            ctx.fillRect(canvas.width - barWidth - 20, 20, barWidth * healthPercent, barHeight);
+            
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(canvas.width - barWidth - 20, 20, barWidth, barHeight);
+            
+            // Atualizar progresso do dash
+            if (dashCooldown) {
+                const elapsed = Date.now() - dashCooldownStart;
+                dashCooldownProgress = Math.min(elapsed / dashCooldownTime, 1);
+            }
+            
+            // Barra de dash
+            const dashBarY = 50;
+            
+            ctx.fillStyle = 'rgba(100, 100, 100, 0.7)';
+            ctx.fillRect(canvas.width - barWidth - 20, dashBarY, barWidth, 15);
+            ctx.fillStyle = 'rgba(0, 0, 255, 0.7)';
+            ctx.fillRect(canvas.width - barWidth - 20, dashBarY, barWidth * dashCooldownProgress, 15);
+            
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(canvas.width - barWidth - 20, dashBarY, barWidth, 15);
+            
+            // Texto dash
+            ctx.fillStyle = 'white';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'right';
+            ctx.fillText('DASH', canvas.width - 25, dashBarY + 12);
+        }
+        
+        function gameLoop() {
+            if (gameRunning) {
+                update();
+                draw();
+                requestAnimationFrame(gameLoop);
+            }
+        }
+        
+        // Event listeners
+        canvas.addEventListener('mousemove', (e) => {
+            const rect = canvas.getBoundingClientRect();
+            mouse.x = e.clientX - rect.left;
+            mouse.y = e.clientY - rect.top;
+        });
+        
+        canvas.addEventListener('click', (e) => {
+            if (!isMobile) shoot();
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+        
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'r' || e.key === 'R') {
+                reload();
+            }
+            if (e.key === 'Shift') {
+                activateDash();
+            }
+        });
+        
+        function activateDash() {
+            if (!dashCooldown && !isDashing && (lastMovement.x !== 0 || lastMovement.y !== 0)) {
+                isDashing = true;
+                dashCooldown = true;
+                dashCooldownStart = Date.now();
+                dashCooldownProgress = 0;
+                dashDirection.x = lastMovement.x;
+                dashDirection.y = lastMovement.y;
+                
+                // Tocar som de explosão
+                const explosionAudio = new Audio('explosao.mp3');
+                explosionAudio.volume = 0.3;
+                explosionAudio.play().catch(e => console.log('Erro ao tocar áudio de explosão:', e));
+                
+                // Dash dura 2 segundos
+                setTimeout(() => {
+                    isDashing = false;
+                    dashDirection.x = 0;
+                    dashDirection.y = 0;
+                }, 2000);
+                
+                // Cooldown de 10 segundos
+                setTimeout(() => {
+                    dashCooldown = false;
+                    dashCooldownProgress = 1;
+                }, dashCooldownTime);
+            }
+        }
+        
+        // Menu inicial
+        document.getElementById('menu').style.display = 'block';
+        document.getElementById('loginForm').style.display = 'block';
+        document.getElementById('gameMenu').style.display = 'none';
+        document.getElementById('platformChoice').style.display = 'none';
+        document.getElementById('restartBtn').style.display = 'none';
+        updateLeaderboard();
+    </script>
+</body>
+</html>
